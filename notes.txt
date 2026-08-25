@@ -1,0 +1,50 @@
+Optuna — Short Notes
+
+What it is
+Optuna is an open-source Python library for hyperparameter optimization in machine learning. It automates the search for the best model configuration instead of manual or grid-based tuning.
+
+Key Concepts
+
+Study – the optimization session (e.g., "maximize accuracy")
+Trial – a single run with one set of hyperparameters
+Objective function – the function you define that trains a model and returns a score to optimize
+
+Core Features
+
+Define-by-run API – you write normal Python code, and hyperparameters are sampled dynamically inside the function (no need to predefine a search space upfront like in grid search).
+Efficient search algorithms – uses smart samplers like:
+TPE (Tree-structured Parzen Estimator) — default, Bayesian-based
+CMA-ES, Grid Search, Random Search (also available)
+Pruning – stops unpromising trials early (e.g., bad training runs) to save compute time.
+Visualization tools – built-in plots for optimization history, parameter importance, parallel coordinates, etc.
+Framework-agnostic – works with scikit-learn, PyTorch, TensorFlow/Keras, XGBoost, LightGBM, etc.
+Parallel/distributed optimization – supports running trials across multiple workers.
+
+Basic Example
+
+python
+import optuna
+
+def objective(trial):
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+    n_units = trial.suggest_int("n_units", 32, 256)
+    # train model with these params, return validation score
+    return validation_accuracy
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=50)
+
+print(study.best_params)
+
+Why it's popular
+
+Cleaner and more flexible than GridSearchCV
+Faster convergence to good hyperparameters via Bayesian optimization
+Easy integration into existing training loops
+Good for both small experiments and large-scale ML pipelines
+
+Typical Use Cases
+
+Tuning learning rate, batch size, number of layers/units in neural nets
+Tuning tree depth, number of estimators in XGBoost/LightGBM
+Automated model selection (comparing algorithms within the same objective function)
