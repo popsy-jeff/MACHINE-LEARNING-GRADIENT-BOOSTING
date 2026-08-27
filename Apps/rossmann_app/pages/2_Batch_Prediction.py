@@ -1,16 +1,18 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from utils.model_utils import load_model, predict_sales_batch
 from utils.feature_pipeline import build_features_batch, load_feature_cols, REQUIRED_BATCH_COLUMNS
-from utils.style import inject_css, hero, section_tag, metric_card, plotly_chart, COLORS
+from utils.theme import apply_theme, sidebar_brand, sidebar_mode_lock, kpi_card, section_divider, line_area_chart
 
 st.set_page_config(page_title="Batch Prediction", page_icon="📋", layout="wide")
-inject_css()
-hero("batch", "Batch Sales Prediction", "Upload a CSV with one row per store/date you want a forecast for.")
+apply_theme()
+sidebar_brand()
+sidebar_mode_lock()
+st.title("📋 Batch Sales Prediction")
 
-section_tag("Format", "layers")
 st.markdown(f"""
+Upload a CSV with one row per store/date you want a forecast for.
+
 **Required columns:** `{'`, `'.join(REQUIRED_BATCH_COLUMNS)}`
 
 Optional columns (improves accuracy if provided): `Open`, `CompetitionOpenSinceYear`,
@@ -37,42 +39,25 @@ if uploaded_file is not None:
         result_df = raw_df.copy()
         result_df['Predicted_Sales'] = predictions
 
-        section_tag("Summary", "gauge")
-        k1, k2, k3, k4 = st.columns(4)
-        with k1:
-            metric_card("layers", "Rows", f"{len(result_df):,}")
-        with k2:
-            metric_card("coins", "Total predicted", f"${result_df['Predicted_Sales'].sum():,.0f}", color=COLORS["primary"])
-        with k3:
-            metric_card("gauge", "Average / row", f"${result_df['Predicted_Sales'].mean():,.0f}")
-        with k4:
-            metric_card("trend-up", "Highest", f"${result_df['Predicted_Sales'].max():,.0f}", color=COLORS["accent"])
+        st.success(f"Generated {len(result_df)} predictions.")
 
-        chart_col, top_col = st.columns([3, 2])
+        section_divider()
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            kpi_card("Total Predicted Revenue", f"${result_df['Predicted_Sales'].sum():,.0f}", signal="green")
+        with c2:
+            kpi_card("Average per Row", f"${result_df['Predicted_Sales'].mean():,.0f}", signal="green")
+        with c3:
+            kpi_card("Rows Predicted", f"{len(result_df):,}", signal="yellow")
 
-        with chart_col:
-            st.markdown("##### Distribution of predicted sales")
-            fig_hist = px.histogram(result_df, x="Predicted_Sales", nbins=30)
-            fig_hist.update_traces(marker_color=COLORS["primary"])
-            fig_hist.update_layout(xaxis_title="Predicted Sales ($)", yaxis_title="Rows")
-            plotly_chart(fig_hist)
-
-        with top_col:
-            st.markdown("##### Top 10 by predicted sales")
-            top10 = result_df.nlargest(10, "Predicted_Sales")
-            y_vals = top10["Store"].astype(str) if "Store" in top10.columns else top10.index.astype(str)
-            fig_top = px.bar(
-                top10.sort_values("Predicted_Sales"),
-                x="Predicted_Sales",
-                y=y_vals,
-                orientation="h",
+        if 'Date' in result_df.columns:
+            trend_df = result_df.groupby('Date', as_index=False)['Predicted_Sales'].sum().sort_values('Date')
+            st.plotly_chart(
+                line_area_chart(trend_df, 'Date', 'Predicted_Sales', title="Predicted sales over time"),
+                width='stretch',
             )
-            fig_top.update_traces(marker_color=COLORS["accent"])
-            fig_top.update_layout(xaxis_title="Predicted Sales ($)", yaxis_title="Store")
-            plotly_chart(fig_top)
 
-        section_tag("Full results", "layers")
-        st.dataframe(result_df, use_container_width=True)
+        st.dataframe(result_df, width='stretch')
 
         st.download_button(
             "Download predictions as CSV",

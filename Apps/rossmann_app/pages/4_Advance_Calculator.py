@@ -1,28 +1,32 @@
 import streamlit as st
 from datetime import date, timedelta
 import pandas as pd
-import plotly.graph_objects as go
 from utils.model_utils import load_model, predict_sales, MODEL_VERSION
 from utils.feature_pipeline import build_features, load_feature_cols
 from utils.business_logic import build_advance_offer
 from utils.audit_log import log_decision
-from utils.style import inject_css, hero, section_tag, metric_card, badge, risk_color, plotly_chart, COLORS
+from utils.theme import (
+    apply_theme, sidebar_brand, sidebar_mode_lock, kpi_card, glow_pill,
+    risk_signal, gauge_chart, line_area_chart, section_divider,
+)
 
 st.set_page_config(page_title="Advance Calculator", page_icon="💰", layout="wide")
-inject_css()
-hero(
-    "advance",
-    "Revenue-Based Financing — Advance Calculator",
-    "Aggregates a 90-day sales forecast for a store, applies a conservative adjustment, "
-    "runs eligibility checks, and calculates a merchant cash advance offer.",
-)
+apply_theme()
+sidebar_brand()
+sidebar_mode_lock()
+st.title("💰 Revenue-Based Financing — Advance Calculator")
+
+st.markdown("""
+Aggregates a 90-day sales forecast for a store, applies a conservative
+adjustment, runs eligibility checks, and calculates a merchant cash
+advance offer — following Phase 3 of the workflow.
+""")
 
 model, is_demo = load_model()
 feature_cols = load_feature_cols()
 
-section_tag("Inputs", "store")
 with st.form("advance_form"):
-    st.markdown("**Store Details**")
+    st.subheader("Store Details")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -58,6 +62,7 @@ if submitted:
                 competition_distance=competition_distance,
                 feature_cols=feature_cols,
             )
+            # Sundays (day_of_week == 7) treated as closed by default, adjust as needed
             is_open = 0 if forecast_date.isoweekday() == 7 else 1
             pred = predict_sales(model, features, is_open=is_open)
             daily_predictions.append(pred)
@@ -73,44 +78,47 @@ if submitted:
 
     log_decision(store_id, MODEL_VERSION, offer)
 
-    section_tag("Results", "bolt")
+    section_divider()
+    st.subheader("Results")
 
     if not offer.eligibility.eligible:
-        badge("Not eligible", COLORS["high"], "warn")
+        glow_pill("Not eligible for an advance", signal="red")
         for reason in offer.eligibility.reasons:
             st.write(f"- {reason}")
     else:
-        badge("Eligible", COLORS["low"], "check")
+        glow_pill("Eligible", signal="green")
         st.write("")
-
         col1, col2, col3 = st.columns(3)
         with col1:
-            metric_card("trend-up", "90-day projected sales", f"${offer.projected_90d_sales:,.0f}")
+            kpi_card("90-Day Projected Sales", f"${offer.projected_90d_sales:,.0f}", signal="green")
         with col2:
-            metric_card("gauge", "Safe estimate", f"${offer.safe_estimate:,.0f}", "post-haircut")
+            kpi_card("Safe Estimate (post-haircut)", f"${offer.safe_estimate:,.0f}", signal="yellow")
         with col3:
-            metric_card("risk", "Risk tier", offer.risk_tier, color=risk_color(offer.risk_tier))
+            kpi_card("Risk Tier", offer.risk_tier, signal=risk_signal(offer.risk_tier))
 
-        col4, col5 = st.columns(2)
+        st.write("")
+        col4, col5, col6 = st.columns([1, 1, 1])
         with col4:
-            metric_card("coins", "Max advance offer", f"${offer.max_advance:,.0f}", color=COLORS["primary"])
+            kpi_card("Max Advance Offer", f"${offer.max_advance:,.0f}", signal="green")
         with col5:
-            metric_card("percent", "Daily holdback", f"{offer.daily_holdback_pct:.1%}")
+            kpi_card("Daily Holdback %", f"{offer.daily_holdback_pct:.1%}", signal="yellow")
+        with col6:
+            st.plotly_chart(
+                gauge_chart(
+                    {"Low": 20, "Medium": 55, "High": 90}.get(offer.risk_tier, 55),
+                    0, 100, "Risk Score", good_is_low=True,
+                ),
+                width='stretch',
+            )
 
-        st.progress(min(offer.daily_holdback_pct, 1.0), text=f"Daily holdback: {offer.daily_holdback_pct:.1%} of daily revenue")
-
-    st.markdown("##### 90-day forecast used for this calculation")
-    forecast_dates = [start_date + timedelta(days=i) for i in range(90)]
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=forecast_dates, y=daily_predictions,
-        mode="lines", fill="tozeroy",
-        line=dict(color=COLORS["primary"], width=2, shape="spline"),
-        fillcolor=COLORS["primary"] + "26",
-        name="Predicted Sales",
-        hovertemplate="%{x|%b %d}<br>$%{y:,.0f}<extra></extra>",
-    ))
-    fig.update_layout(yaxis_title="Predicted Sales ($)", xaxis_title="Date")
-    plotly_chart(fig, height=340)
+    with st.expander("See daily forecast used for this calculation", expanded=True):
+        chart_df = pd.DataFrame({
+            "Date": [start_date + timedelta(days=i) for i in range(90)],
+            "Predicted Sales": daily_predictions,
+        })
+        st.plotly_chart(
+            line_area_chart(chart_df, "Date", "Predicted Sales", title="90-day sales forecast"),
+            width='stretch',
+        )
 
     st.caption("This decision has been logged to the audit trail — see Risk Dashboard.")

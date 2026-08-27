@@ -1,60 +1,56 @@
 import streamlit as st
 from utils.model_utils import load_model, MODEL_VERSION
-from utils.style import inject_css, hero, section_tag, metric_card, badge, nav_card, footer, COLORS
+from utils.theme import apply_theme, sidebar_brand, sidebar_mode_lock, kpi_card, section_divider
 
 st.set_page_config(page_title="Rossmann Sales & Financing", page_icon="📈", layout="wide")
-inject_css()
+apply_theme()
+sidebar_brand()
+sidebar_mode_lock()
 
-hero(
-    "trend-up",
-    "Rossmann Sales Forecasting & Revenue-Based Financing",
-    "A gradient-boosted forecasting model, wrapped in a working finance product: "
-    "a merchant cash advance tool that lends stores money against their predicted "
-    "future sales, repaid as a daily percentage of revenue.",
-)
+st.title("📈 Rossmann Sales Forecasting & Revenue-Based Financing")
+
+st.markdown("""
+This app turns a trained sales-forecasting model into a working finance
+product: a merchant cash advance tool that lends stores money against
+their predicted future sales, repaid as a daily percentage of revenue.
+""")
 
 model, is_demo = load_model()
 
-status_col, version_col, algo_col = st.columns(3)
-with status_col:
-    if is_demo:
-        metric_card("flask", "Model status", "Demo mode", "Synthetic data, click-through only", COLORS["medium"])
-    else:
-        metric_card("check", "Model status", "Live", "Serving real predictions", COLORS["low"])
-with version_col:
-    metric_card("bolt", "Model version", MODEL_VERSION)
-with algo_col:
-    metric_card("gauge", "Algorithm", "XGBoost", "Gradient Boosting")
+col1, col2, col3 = st.columns(3)
+with col1:
+    kpi_card("Model Status", "Demo Model" if is_demo else "Trained Model",
+              sub=f"version {MODEL_VERSION}", signal="yellow" if is_demo else "green")
+with col2:
+    kpi_card("Pipeline Stage", "Phase 3", sub="Business logic layer active", signal="green")
+with col3:
+    kpi_card("Pages Available", "5", sub="Prediction → Financing → Ops", signal="green")
+
+section_divider()
+
+st.markdown("#### Navigate")
+p1, p2 = st.columns(2)
+with p1:
+    st.markdown("""
+    - 🔮 **Single Prediction** — forecast one store's sales for one day
+    - 📋 **Batch Prediction** — upload a CSV, get forecasts for every row
+    - 📊 **Model Performance** — validation metrics and feature importance
+    """)
+with p2:
+    st.markdown("""
+    - 💰 **Advance Calculator** — 90-day forecast → financing offer (Phase 3)
+    - 🛡️ **Risk Dashboard** — flagged applications, audit log (Phase 3–5)
+    """)
+
+section_divider()
 
 if is_demo:
     st.warning(
-        "No trained model found at `models/rossmann_sales_model.pkl` — running with a "
+        "⚠️ No trained model found at `models/rossmann_sales_model.pkl` — running with a "
         "**demo model** trained on synthetic data so the app is fully click-through-able. "
         "Export your real model with `joblib.dump(final_model, 'rossmann_sales_model.pkl')` "
         "and `joblib.dump(feature_cols, 'feature_cols.pkl')`, then drop both files into "
         "this app's `models/` folder to get real predictions."
     )
-
-section_tag("Get around the app", "layers")
-
-row1 = st.columns(3)
-row2 = st.columns(2)
-
-pages = [
-    ("single", "Single Prediction", "Forecast one store's sales for one day.", "pages/1_Single_Prediction.py"),
-    ("batch", "Batch Prediction", "Upload a CSV of store/date rows, get forecasts for all of them.", "pages/2_Batch_Prediction.py"),
-    ("performance", "Model Performance", "Validation metrics and feature importance.", "pages/3_Model_Performance.py"),
-    ("advance", "Advance Calculator", "Turn a 90-day forecast into a financing offer.", "pages/4_Advance_Calculator.py"),
-    ("risk", "Risk Dashboard", "Review flagged / high-risk applications and the audit log.", "pages/5_Risk_Dashboard.py"),
-]
-
-slots = row1 + row2
-for (icon, title, desc, target), slot in zip(pages, slots):
-    with slot:
-        nav_card(icon, title, desc)
-        st.page_link(target, label=f"Open {title}")
-
-footer(
-    'Built by Jeff Mulele · Gradient Boosting portfolio project · '
-    '<a href="https://github.com/popsy-jeff/MACHINE-LEARNING-GRADIENT-BOOSTING" target="_blank">View source on GitHub</a>'
-)
+else:
+    st.success(f"✅ Loaded trained model — version `{MODEL_VERSION}`")

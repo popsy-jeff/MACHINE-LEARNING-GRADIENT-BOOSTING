@@ -1,57 +1,41 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 import json
 import os
 from utils.model_utils import load_model, MODEL_VERSION
-from utils.style import inject_css, hero, section_tag, metric_card, plotly_chart, COLORS
+from utils.theme import apply_theme, sidebar_brand, sidebar_mode_lock, kpi_card, gauge_chart, styled_bar_chart, section_divider
 
 st.set_page_config(page_title="Model Performance", page_icon="📊", layout="wide")
-inject_css()
-hero("performance", "Model Performance", "Validation metrics, hyperparameters, and what the model is actually paying attention to.")
+apply_theme()
+sidebar_brand()
+sidebar_mode_lock()
+st.title("📊 Model Performance")
 
 model, is_demo = load_model()
+
 METRICS_PATH = "models/validation_metrics.json"
 
-section_tag("Validation", "gauge")
+st.subheader("Validation Metrics")
 
 if os.path.exists(METRICS_PATH):
     with open(METRICS_PATH) as f:
         metrics = json.load(f)
 
-    gauge_col, kpi_col = st.columns([1, 2])
+    gcol, kcol = st.columns([1, 1.4])
+    with gcol:
+        st.plotly_chart(
+            gauge_chart(metrics.get('rmspe', 0), 0, 0.5, "Validation RMSPE", good_is_low=True),
+            width='stretch',
+        )
+    with kcol:
+        st.write("")
+        kpi_card("Model Version", MODEL_VERSION, signal="green")
+        st.write("")
+        kpi_card("Trials Searched", str(metrics.get('n_trials', 'N/A')), signal="yellow")
 
-    with gauge_col:
-        rmspe = metrics.get('rmspe', 0)
-        fig_gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=rmspe,
-            number={"valueformat": ".4f", "font": {"color": "#94A3B8"}},
-            title={"text": "Validation RMSPE (lower is better)", "font": {"color": "#94A3B8", "size": 13}},
-            gauge={
-                "axis": {"range": [0, max(0.4, rmspe * 1.5)], "tickcolor": "#94A3B8"},
-                "bar": {"color": COLORS["primary"]},
-                "bgcolor": "rgba(0,0,0,0)",
-                "borderwidth": 0,
-                "steps": [
-                    {"range": [0, 0.15], "color": COLORS["low"] + "26"},
-                    {"range": [0.15, 0.25], "color": COLORS["medium"] + "26"},
-                    {"range": [0.25, max(0.4, rmspe * 1.5)], "color": COLORS["high"] + "26"},
-                ],
-            },
-        ))
-        plotly_chart(fig_gauge, height=260)
-
-    with kpi_col:
-        c1, c2 = st.columns(2)
-        with c1:
-            metric_card("bolt", "Model version", MODEL_VERSION)
-        with c2:
-            metric_card("layers", "Trials searched", str(metrics.get('n_trials', 'N/A')))
-        if 'best_params' in metrics:
-            st.markdown("##### Best hyperparameters (Optuna search)")
-            st.json(metrics['best_params'])
+    if 'best_params' in metrics:
+        st.subheader("Best Hyperparameters (from Optuna search)")
+        st.json(metrics['best_params'])
 else:
     st.info(
         "No saved metrics found at `models/validation_metrics.json`. "
@@ -69,27 +53,26 @@ with open("validation_metrics.json", "w") as f:
     json.dump(metrics, f, indent=2)
 """, language="python")
 
-    st.markdown("##### Recent search runs (from your notebook)")
+    # Show your three most recent actual search runs as a placeholder reference
+    st.subheader("Recent search runs (from your notebook)")
     runs = pd.DataFrame([
         {"trials": 20, "rmspe": 0.171487, "max_depth": 9, "n_estimators": 380, "learning_rate": 0.1135},
         {"trials": 20, "rmspe": 0.169938, "max_depth": 10, "n_estimators": 444, "learning_rate": 0.1054},
         {"trials": 30, "rmspe": 0.170200, "max_depth": 9, "n_estimators": 510, "learning_rate": 0.1103},
     ])
-
-    run_col, table_col = st.columns([3, 2])
-    with run_col:
-        fig_runs = px.line(
-            runs.reset_index().rename(columns={"index": "run"}),
-            x="run", y="rmspe", markers=True,
+    gcol, tcol = st.columns([1, 1.4])
+    with gcol:
+        st.plotly_chart(
+            gauge_chart(runs['rmspe'].iloc[-1], 0, 0.5, "Latest run RMSPE", good_is_low=True),
+            width='stretch',
         )
-        fig_runs.update_traces(line_color=COLORS["primary"], marker_color=COLORS["primary"])
-        fig_runs.update_layout(yaxis_title="RMSPE", xaxis_title="Search run")
-        plotly_chart(fig_runs, height=300)
-    with table_col:
-        st.dataframe(runs, use_container_width=True)
+    with tcol:
+        st.write("")
+        st.dataframe(runs, width='stretch')
     st.caption("These three runs converged around RMSPE ≈ 0.170 — a stable performance plateau.")
 
-section_tag("Feature importance", "trend-up")
+section_divider()
+st.subheader("Feature Importance")
 try:
     importances = model.feature_importances_
     from utils.feature_pipeline import load_feature_cols
@@ -97,12 +80,11 @@ try:
     imp_df = pd.DataFrame({
         "feature": feature_cols[:len(importances)],
         "importance": importances,
-    }).sort_values("importance", ascending=True).tail(15)
-
-    fig_imp = px.bar(imp_df, x="importance", y="feature", orientation="h", color="importance")
-    fig_imp.update_traces(marker_colorscale=[[0, "#312E81"], [1, COLORS["primary"]]])
-    fig_imp.update_layout(coloraxis_showscale=False, yaxis_title="", xaxis_title="Relative importance")
-    plotly_chart(fig_imp, height=460)
+    }).sort_values("importance", ascending=False).head(15)
+    st.plotly_chart(
+        styled_bar_chart(imp_df, "feature", "importance", title="Top 15 features"),
+        width='stretch',
+    )
 except Exception as e:
     st.warning(f"Could not compute feature importance: {e}")
 
