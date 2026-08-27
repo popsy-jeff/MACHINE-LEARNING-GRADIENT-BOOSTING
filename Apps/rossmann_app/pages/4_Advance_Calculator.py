@@ -1,25 +1,27 @@
 import streamlit as st
 from datetime import date, timedelta
 import pandas as pd
+import plotly.graph_objects as go
 from utils.model_utils import load_model, predict_sales, MODEL_VERSION
 from utils.feature_pipeline import build_features, load_feature_cols
 from utils.business_logic import build_advance_offer
 from utils.audit_log import log_decision
+from utils.style import inject_css, hero, section_tag, badge, risk_color, COLORS
 
-st.set_page_config(page_title="Advance Calculator", page_icon="💰")
-st.title("💰 Revenue-Based Financing — Advance Calculator")
-
-st.markdown("""
-Aggregates a 90-day sales forecast for a store, applies a conservative
-adjustment, runs eligibility checks, and calculates a merchant cash
-advance offer — following Phase 3 of the workflow.
-""")
+st.set_page_config(page_title="Advance Calculator", page_icon="💰", layout="wide")
+inject_css()
+hero(
+    "💰 Revenue-Based Financing — Advance Calculator",
+    "Aggregates a 90-day sales forecast for a store, applies a conservative adjustment, "
+    "runs eligibility checks, and calculates a merchant cash advance offer.",
+)
 
 model, is_demo = load_model()
 feature_cols = load_feature_cols()
 
+section_tag("Inputs")
 with st.form("advance_form"):
-    st.subheader("Store Details")
+    st.markdown("**🏬 Store Details**")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -55,7 +57,6 @@ if submitted:
                 competition_distance=competition_distance,
                 feature_cols=feature_cols,
             )
-            # Sundays (day_of_week == 7) treated as closed by default, adjust as needed
             is_open = 0 if forecast_date.isoweekday() == 7 else 1
             pred = predict_sales(model, features, is_open=is_open)
             daily_predictions.append(pred)
@@ -71,28 +72,47 @@ if submitted:
 
     log_decision(store_id, MODEL_VERSION, offer)
 
-    st.subheader("Results")
+    st.write("")
+    section_tag("Results")
 
     if not offer.eligibility.eligible:
-        st.error("❌ Not eligible for an advance")
+        badge("Not eligible", COLORS["high"])
+        st.write("")
         for reason in offer.eligibility.reasons:
             st.write(f"- {reason}")
     else:
-        st.success("✅ Eligible")
+        badge("Eligible", COLORS["low"])
+        st.write("")
+
         col1, col2, col3 = st.columns(3)
         col1.metric("90-Day Projected Sales", f"${offer.projected_90d_sales:,.0f}")
         col2.metric("Safe Estimate (post-haircut)", f"${offer.safe_estimate:,.0f}")
-        col3.metric("Risk Tier", offer.risk_tier)
+        with col3:
+            st.caption("Risk Tier")
+            badge(offer.risk_tier, risk_color(offer.risk_tier))
 
         col4, col5 = st.columns(2)
         col4.metric("Max Advance Offer", f"${offer.max_advance:,.0f}")
         col5.metric("Daily Holdback %", f"{offer.daily_holdback_pct:.1%}")
 
-    with st.expander("See daily forecast used for this calculation"):
-        chart_df = pd.DataFrame({
-            "Date": [start_date + timedelta(days=i) for i in range(90)],
-            "Predicted Sales": daily_predictions,
-        })
-        st.line_chart(chart_df.set_index("Date"))
+        st.progress(min(offer.daily_holdback_pct, 1.0), text=f"Daily holdback {offer.daily_holdback_pct:.1%} of daily revenue")
+
+    st.write("")
+    st.markdown("##### 90-day forecast used for this calculation")
+    forecast_dates = [start_date + timedelta(days=i) for i in range(90)]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=forecast_dates, y=daily_predictions,
+        mode="lines", fill="tozeroy",
+        line=dict(color=COLORS["primary"], width=2),
+        fillcolor=COLORS["primary"] + "22",
+        name="Predicted Sales",
+    ))
+    fig.update_layout(
+        height=340, margin=dict(l=10, r=10, t=10, b=10),
+        plot_bgcolor="white", paper_bgcolor="white",
+        yaxis_title="Predicted Sales ($)", xaxis_title="Date",
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
     st.caption("This decision has been logged to the audit trail — see Risk Dashboard.")
