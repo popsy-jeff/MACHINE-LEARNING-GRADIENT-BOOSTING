@@ -4,11 +4,11 @@ import plotly.graph_objects as go
 from datetime import date
 from utils.model_utils import load_model, predict_sales
 from utils.feature_pipeline import build_features, load_feature_cols
-from utils.style import inject_css, hero, section_tag, COLORS, PLOTLY_SEQUENCE
+from utils.style import inject_css, hero, section_tag, metric_card, plotly_chart, COLORS
 
 st.set_page_config(page_title="Single Prediction", page_icon="🔮", layout="wide")
 inject_css()
-hero("🔮 Single Store Sales Prediction", "Fill in one store's details for one day and get an instant forecast.")
+hero("single", "Single Store Sales Prediction", "Fill in one store's details for one day and get an instant forecast.")
 
 model, is_demo = load_model()
 feature_cols = load_feature_cols()
@@ -16,12 +16,12 @@ feature_cols = load_feature_cols()
 if "single_pred_history" not in st.session_state:
     st.session_state.single_pred_history = []
 
-section_tag("Inputs")
+section_tag("Inputs", "store")
 with st.form("single_prediction_form"):
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("**🏬 Store & Date**")
+        st.markdown("**Store & Date**")
         store_id = st.number_input("Store ID", min_value=1, value=1, step=1)
         forecast_date = st.date_input("Forecast date", value=date.today())
         is_open = st.selectbox("Store open that day?", [1, 0], format_func=lambda x: "Open" if x == 1 else "Closed")
@@ -30,7 +30,7 @@ with st.form("single_prediction_form"):
         state_holiday = st.selectbox("State holiday", ["0", "a", "b", "c"], help="0 = none, a/b/c = holiday types")
 
     with col2:
-        st.markdown("**🧾 Store Profile**")
+        st.markdown("**Store Profile**")
         store_type = st.selectbox("Store type", ["a", "b", "c", "d"])
         assortment = st.selectbox("Assortment level", ["a", "b", "c"])
         competition_distance = st.number_input("Competition distance (meters)", min_value=0.0, value=500.0)
@@ -58,12 +58,14 @@ if submitted:
         {"Store": store_id, "Date": str(forecast_date), "Predicted Sales": prediction}
     )
 
-    st.write("")
-    section_tag("Result")
+    section_tag("Result", "bolt")
     res_col1, res_col2, res_col3 = st.columns(3)
-    res_col1.metric("Predicted Sales", f"${prediction:,.2f}")
-    res_col2.metric("Store", f"#{store_id}")
-    res_col3.metric("Day of Week", forecast_date.strftime("%A"))
+    with res_col1:
+        metric_card("coins", "Predicted sales", f"${prediction:,.2f}", color=COLORS["primary"])
+    with res_col2:
+        metric_card("store", "Store", f"#{store_id}")
+    with res_col3:
+        metric_card("calendar", "Day of week", forecast_date.strftime("%A"))
 
     if is_demo:
         st.caption("⚠️ This prediction is from the demo model, not your real trained model.")
@@ -72,8 +74,7 @@ if submitted:
         st.dataframe(features, use_container_width=True)
 
 if len(st.session_state.single_pred_history) > 1:
-    st.write("")
-    section_tag("This session")
+    section_tag("This session", "trend-up")
     st.markdown("##### Predictions you've made so far")
     hist_df = pd.DataFrame(st.session_state.single_pred_history)
 
@@ -83,17 +84,11 @@ if len(st.session_state.single_pred_history) > 1:
             x=[f"#{r['Store']} · {r['Date']}" for r in st.session_state.single_pred_history],
             y=hist_df["Predicted Sales"],
             marker_color=COLORS["primary"],
+            hovertemplate="%{x}<br>$%{y:,.0f}<extra></extra>",
         )
     )
-    fig.update_layout(
-        height=320,
-        margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        yaxis_title="Predicted Sales ($)",
-        colorway=PLOTLY_SEQUENCE,
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(yaxis_title="Predicted Sales ($)")
+    plotly_chart(fig)
 
     if st.button("Clear session history"):
         st.session_state.single_pred_history = []

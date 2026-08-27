@@ -6,12 +6,13 @@ from utils.model_utils import load_model, predict_sales, MODEL_VERSION
 from utils.feature_pipeline import build_features, load_feature_cols
 from utils.business_logic import build_advance_offer
 from utils.audit_log import log_decision
-from utils.style import inject_css, hero, section_tag, badge, risk_color, COLORS
+from utils.style import inject_css, hero, section_tag, metric_card, badge, risk_color, plotly_chart, COLORS
 
 st.set_page_config(page_title="Advance Calculator", page_icon="💰", layout="wide")
 inject_css()
 hero(
-    "💰 Revenue-Based Financing — Advance Calculator",
+    "advance",
+    "Revenue-Based Financing — Advance Calculator",
     "Aggregates a 90-day sales forecast for a store, applies a conservative adjustment, "
     "runs eligibility checks, and calculates a merchant cash advance offer.",
 )
@@ -19,9 +20,9 @@ hero(
 model, is_demo = load_model()
 feature_cols = load_feature_cols()
 
-section_tag("Inputs")
+section_tag("Inputs", "store")
 with st.form("advance_form"):
-    st.markdown("**🏬 Store Details**")
+    st.markdown("**Store Details**")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -72,47 +73,44 @@ if submitted:
 
     log_decision(store_id, MODEL_VERSION, offer)
 
-    st.write("")
-    section_tag("Results")
+    section_tag("Results", "bolt")
 
     if not offer.eligibility.eligible:
-        badge("Not eligible", COLORS["high"])
-        st.write("")
+        badge("Not eligible", COLORS["high"], "warn")
         for reason in offer.eligibility.reasons:
             st.write(f"- {reason}")
     else:
-        badge("Eligible", COLORS["low"])
+        badge("Eligible", COLORS["low"], "check")
         st.write("")
 
         col1, col2, col3 = st.columns(3)
-        col1.metric("90-Day Projected Sales", f"${offer.projected_90d_sales:,.0f}")
-        col2.metric("Safe Estimate (post-haircut)", f"${offer.safe_estimate:,.0f}")
+        with col1:
+            metric_card("trend-up", "90-day projected sales", f"${offer.projected_90d_sales:,.0f}")
+        with col2:
+            metric_card("gauge", "Safe estimate", f"${offer.safe_estimate:,.0f}", "post-haircut")
         with col3:
-            st.caption("Risk Tier")
-            badge(offer.risk_tier, risk_color(offer.risk_tier))
+            metric_card("risk", "Risk tier", offer.risk_tier, color=risk_color(offer.risk_tier))
 
         col4, col5 = st.columns(2)
-        col4.metric("Max Advance Offer", f"${offer.max_advance:,.0f}")
-        col5.metric("Daily Holdback %", f"{offer.daily_holdback_pct:.1%}")
+        with col4:
+            metric_card("coins", "Max advance offer", f"${offer.max_advance:,.0f}", color=COLORS["primary"])
+        with col5:
+            metric_card("percent", "Daily holdback", f"{offer.daily_holdback_pct:.1%}")
 
-        st.progress(min(offer.daily_holdback_pct, 1.0), text=f"Daily holdback {offer.daily_holdback_pct:.1%} of daily revenue")
+        st.progress(min(offer.daily_holdback_pct, 1.0), text=f"Daily holdback: {offer.daily_holdback_pct:.1%} of daily revenue")
 
-    st.write("")
     st.markdown("##### 90-day forecast used for this calculation")
     forecast_dates = [start_date + timedelta(days=i) for i in range(90)]
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=forecast_dates, y=daily_predictions,
         mode="lines", fill="tozeroy",
-        line=dict(color=COLORS["primary"], width=2),
-        fillcolor=COLORS["primary"] + "22",
+        line=dict(color=COLORS["primary"], width=2, shape="spline"),
+        fillcolor=COLORS["primary"] + "26",
         name="Predicted Sales",
+        hovertemplate="%{x|%b %d}<br>$%{y:,.0f}<extra></extra>",
     ))
-    fig.update_layout(
-        height=340, margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor="white", paper_bgcolor="white",
-        yaxis_title="Predicted Sales ($)", xaxis_title="Date",
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(yaxis_title="Predicted Sales ($)", xaxis_title="Date")
+    plotly_chart(fig, height=340)
 
     st.caption("This decision has been logged to the audit trail — see Risk Dashboard.")

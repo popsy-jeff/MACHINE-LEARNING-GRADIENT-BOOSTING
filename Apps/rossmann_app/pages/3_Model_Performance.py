@@ -5,17 +5,16 @@ import plotly.graph_objects as go
 import json
 import os
 from utils.model_utils import load_model, MODEL_VERSION
-from utils.style import inject_css, hero, section_tag, COLORS, PLOTLY_SEQUENCE
+from utils.style import inject_css, hero, section_tag, metric_card, plotly_chart, COLORS
 
 st.set_page_config(page_title="Model Performance", page_icon="📊", layout="wide")
 inject_css()
-hero("📊 Model Performance", "Validation metrics, hyperparameters, and what the model is actually paying attention to.")
+hero("performance", "Model Performance", "Validation metrics, hyperparameters, and what the model is actually paying attention to.")
 
 model, is_demo = load_model()
-
 METRICS_PATH = "models/validation_metrics.json"
 
-section_tag("Validation")
+section_tag("Validation", "gauge")
 
 if os.path.exists(METRICS_PATH):
     with open(METRICS_PATH) as f:
@@ -28,25 +27,28 @@ if os.path.exists(METRICS_PATH):
         fig_gauge = go.Figure(go.Indicator(
             mode="gauge+number",
             value=rmspe,
-            number={"valueformat": ".4f"},
-            title={"text": "Validation RMSPE (lower is better)"},
+            number={"valueformat": ".4f", "font": {"color": "#94A3B8"}},
+            title={"text": "Validation RMSPE (lower is better)", "font": {"color": "#94A3B8", "size": 13}},
             gauge={
-                "axis": {"range": [0, max(0.4, rmspe * 1.5)]},
+                "axis": {"range": [0, max(0.4, rmspe * 1.5)], "tickcolor": "#94A3B8"},
                 "bar": {"color": COLORS["primary"]},
+                "bgcolor": "rgba(0,0,0,0)",
+                "borderwidth": 0,
                 "steps": [
-                    {"range": [0, 0.15], "color": COLORS["low"] + "33"},
-                    {"range": [0.15, 0.25], "color": COLORS["medium"] + "33"},
-                    {"range": [0.25, max(0.4, rmspe * 1.5)], "color": COLORS["high"] + "33"},
+                    {"range": [0, 0.15], "color": COLORS["low"] + "26"},
+                    {"range": [0.15, 0.25], "color": COLORS["medium"] + "26"},
+                    {"range": [0.25, max(0.4, rmspe * 1.5)], "color": COLORS["high"] + "26"},
                 ],
             },
         ))
-        fig_gauge.update_layout(height=260, margin=dict(l=20, r=20, t=50, b=10))
-        st.plotly_chart(fig_gauge, use_container_width=True)
+        plotly_chart(fig_gauge, height=260)
 
     with kpi_col:
         c1, c2 = st.columns(2)
-        c1.metric("Model Version", MODEL_VERSION)
-        c2.metric("Trials Searched", metrics.get('n_trials', 'N/A'))
+        with c1:
+            metric_card("bolt", "Model version", MODEL_VERSION)
+        with c2:
+            metric_card("layers", "Trials searched", str(metrics.get('n_trials', 'N/A')))
         if 'best_params' in metrics:
             st.markdown("##### Best hyperparameters (Optuna search)")
             st.json(metrics['best_params'])
@@ -79,20 +81,15 @@ with open("validation_metrics.json", "w") as f:
         fig_runs = px.line(
             runs.reset_index().rename(columns={"index": "run"}),
             x="run", y="rmspe", markers=True,
-            color_discrete_sequence=[COLORS["primary"]],
         )
-        fig_runs.update_layout(
-            height=300, margin=dict(l=10, r=10, t=10, b=10),
-            plot_bgcolor="white", paper_bgcolor="white",
-            yaxis_title="RMSPE", xaxis_title="Search run",
-        )
-        st.plotly_chart(fig_runs, use_container_width=True)
+        fig_runs.update_traces(line_color=COLORS["primary"], marker_color=COLORS["primary"])
+        fig_runs.update_layout(yaxis_title="RMSPE", xaxis_title="Search run")
+        plotly_chart(fig_runs, height=300)
     with table_col:
         st.dataframe(runs, use_container_width=True)
     st.caption("These three runs converged around RMSPE ≈ 0.170 — a stable performance plateau.")
 
-st.write("")
-section_tag("Feature importance")
+section_tag("Feature importance", "trend-up")
 try:
     importances = model.feature_importances_
     from utils.feature_pipeline import load_feature_cols
@@ -102,16 +99,10 @@ try:
         "importance": importances,
     }).sort_values("importance", ascending=True).tail(15)
 
-    fig_imp = px.bar(
-        imp_df, x="importance", y="feature", orientation="h",
-        color="importance", color_continuous_scale=[COLORS["bg_soft"], COLORS["primary"]],
-    )
-    fig_imp.update_layout(
-        height=460, margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor="white", paper_bgcolor="white",
-        coloraxis_showscale=False, yaxis_title="", xaxis_title="Relative importance",
-    )
-    st.plotly_chart(fig_imp, use_container_width=True)
+    fig_imp = px.bar(imp_df, x="importance", y="feature", orientation="h", color="importance")
+    fig_imp.update_traces(marker_colorscale=[[0, "#312E81"], [1, COLORS["primary"]]])
+    fig_imp.update_layout(coloraxis_showscale=False, yaxis_title="", xaxis_title="Relative importance")
+    plotly_chart(fig_imp, height=460)
 except Exception as e:
     st.warning(f"Could not compute feature importance: {e}")
 
