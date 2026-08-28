@@ -78,8 +78,7 @@ def build_features(
     else:
         promo2_open = 0
 
-    is_promo2_month = int(bool(promo2 == 1 and promo_interval_months and month in promo_interval_months))
-
+        is_promo2_month = int(bool(promo2 == 1 and promo_interval_months and month in promo_interval_months))
     row = {
         'Store': store_id,
         'Promo': promo,

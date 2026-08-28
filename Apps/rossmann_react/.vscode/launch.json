@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend (FastAPI)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend",
+      "justMyCode": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Frontend (Vite)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🚀 Run Full App (Backend + Frontend)",
+      "configurations": ["Backend (FastAPI)", "Frontend (Vite)"],
+      "stopAll": true
+    }
+  ]
+}
