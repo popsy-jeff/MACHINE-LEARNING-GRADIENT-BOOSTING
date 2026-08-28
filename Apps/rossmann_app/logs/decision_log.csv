@@ -1,2 +1,0 @@
-timestamp,store_id,model_version,projected_90d_sales,safe_estimate,max_advance,daily_holdback_pct,risk_tier,eligible,decline_reasons
-2026-08-27T11:41:40.759202,1,v1.0-demo,1749523.27,1487094.78,223064.22,0.17,Medium,True,
