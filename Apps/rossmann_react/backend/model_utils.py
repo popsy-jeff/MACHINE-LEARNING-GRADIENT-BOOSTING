@@ -49,18 +49,9 @@ def _build_demo_model():
         col: rng.integers(0, 2, n) if ("_" in col or col in BINARY_COLS) else rng.integers(0, 5000, n)
         for col in DEFAULT_FEATURE_COLS
     })
-    y = 4000 + X.get('Promo', 0) * 1500 + rng.normal(0, 500, n)
-    y = np.clip(y, 0, None)
-
-    demo_model = XGBRegressor(random_state=42, n_estimators=50, max_depth=4)
-    demo_model.fit(X, np.log1p(y))
-    return demo_model
-
 
 def _safe_sales(value: float) -> float:
-    """Guard against inf/NaN ever leaving this function — Python's json module
-    serializes those as the literal tokens Infinity/NaN, which are not valid
-    JSON and break strict parsers (including the browser's JSON.parse)."""
+    """Guard against inf/NaN ever leaving this function."""
     if not np.isfinite(value):
         return 0.0
     return float(value)
