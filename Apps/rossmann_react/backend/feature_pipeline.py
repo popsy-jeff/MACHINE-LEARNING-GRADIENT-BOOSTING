@@ -31,6 +31,31 @@ def load_feature_cols(path="models/feature_cols.pkl"):
     return DEFAULT_FEATURE_COLS
 
 
+_cached_scaler = None
+_cached_scaler_cols = None
+_scaler_loaded = False
+
+
+def load_scaler(scaler_path="models/scaler.pkl", cols_path="models/scaler_cols.pkl"):
+    """Loads the MinMaxScaler fitted on numeric columns during training, plus
+    the exact list of columns it was fit on. Returns (None, None) if either
+    file is missing (e.g. the demo model, or an older export that predates
+    the scaler) — callers should skip scaling in that case rather than error.
+    """
+    global _cached_scaler, _cached_scaler_cols, _scaler_loaded
+    if _scaler_loaded:
+        return _cached_scaler, _cached_scaler_cols
+
+    if os.path.exists(scaler_path) and os.path.exists(cols_path):
+        _cached_scaler = joblib.load(scaler_path)
+        _cached_scaler_cols = joblib.load(cols_path)
+    else:
+        _cached_scaler, _cached_scaler_cols = None, None
+
+    _scaler_loaded = True
+    return _cached_scaler, _cached_scaler_cols
+
+
 def _one_hot(value, categories, prefix):
     return {f"{prefix}_{c}": int(value == c) for c in categories}
 
@@ -101,6 +126,15 @@ def build_features(
     row.update(_one_hot(day_of_week, [1, 2, 3, 4, 5, 6, 7], 'DayOfWeek'))
 
     df = pd.DataFrame([row])
+
+    # Apply the SAME MinMaxScaler fit during training to the same numeric
+    # columns. The model's tree splits were learned in this scaled range —
+    # skipping this step (or scaling differently) makes predictions
+    # meaningless, even though the model still returns a number.
+    scaler, scaler_cols = load_scaler()
+    if scaler is not None and scaler_cols is not None:
+        present = [c for c in scaler_cols if c in df.columns]
+        df[present] = scaler.transform(df[present])
 
     for col in feature_cols:
         if col not in df.columns:
