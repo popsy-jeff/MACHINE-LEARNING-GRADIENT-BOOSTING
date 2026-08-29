@@ -7,13 +7,35 @@ a plain module-level cache (a FastAPI process only needs to load once anyway).
 """
 
 import os
+import json
 import numpy as np
 import pandas as pd
 import joblib
 
 MODEL_PATH = "models/rossmann_sales_model.pkl"
 FEATURE_COLS_PATH = "models/feature_cols.pkl"
-MODEL_VERSION = "v1.0-demo"
+METRICS_PATH = "models/validation_metrics.json"
+
+
+def _model_version() -> str:
+    """Builds a version label from the real model's validation metrics when
+    one is present, so the UI never shows a stale "-demo" label just because
+    that word happened to be baked into a hardcoded constant. Falls back to
+    a demo label only when there's genuinely no trained model on disk."""
+    if os.path.exists(MODEL_PATH) and os.path.exists(METRICS_PATH):
+        try:
+            with open(METRICS_PATH) as f:
+                metrics = json.load(f)
+            rmspe = metrics.get("rmspe")
+            if rmspe is not None:
+                return f"v1.0 (rmspe={rmspe:.4f})"
+            return "v1.0"
+        except Exception:
+            return "v1.0"
+    return "v1.0-demo"
+
+
+MODEL_VERSION = _model_version()
 
 _cached_model = None
 _cached_is_demo = None
