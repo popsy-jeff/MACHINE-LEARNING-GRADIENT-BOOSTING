@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api';
 import { KpiCard, GlowPill, riskSignal, GaugeChart, ForecastLineChart, PageTitle, PAGE_ICONS, Banner } from '../components/Viz';
+import Modal from '../components/Modal';
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -20,6 +21,7 @@ export default function AdvanceCalculator() {
   const [offer, setOffer] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -38,12 +40,17 @@ export default function AdvanceCalculator() {
         trend_pct_90d: Number(form.trend_pct_90d),
       });
       setOffer(res);
+      // Surface a decision modal automatically for outcomes that need
+      // attention — declined (red) or approved-but-high-risk (orange).
+      if (!res.eligible || res.risk_tier === 'High') setModalOpen(true);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const modalType = offer ? (!offer.eligible ? 'red' : 'orange') : 'red';
 
   return (
     <div className="main-content">
@@ -122,7 +129,12 @@ export default function AdvanceCalculator() {
 
           {!offer.eligible ? (
             <>
-              <GlowPill label="Not eligible for an advance" signal="red" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <GlowPill label="Not eligible for an advance" signal="red" />
+                <button type="button" className="btn-3d" style={{ color: 'var(--red)', borderColor: 'var(--red-dim)' }} onClick={() => setModalOpen(true)}>
+                  View decline reasons
+                </button>
+              </div>
               <ul style={{ color: 'var(--text-primary)', marginTop: 12 }}>
                 {offer.decline_reasons.map((r, i) => <li key={i}>{r}</li>)}
               </ul>
@@ -132,7 +144,14 @@ export default function AdvanceCalculator() {
             </>
           ) : (
             <>
-              <GlowPill label="Eligible" signal="green" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <GlowPill label="Eligible" signal="green" />
+                {offer.risk_tier === 'High' && (
+                  <button type="button" className="btn-3d" style={{ color: 'var(--orange)', borderColor: 'var(--orange-dim)' }} onClick={() => setModalOpen(true)}>
+                    View risk flag
+                  </button>
+                )}
+              </div>
 
               <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 14, marginBottom: 6 }}>Forecast summary</p>
               <div className="card-grid">
@@ -166,6 +185,33 @@ export default function AdvanceCalculator() {
           </p>
         </>
       )}
+
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        type={modalType}
+        title={offer && !offer.eligible ? 'Application declined' : 'High risk — approved with caution'}
+      >
+        {offer && !offer.eligible && (
+          <>
+            <p>This application did not meet the eligibility criteria for an advance:</p>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {offer.decline_reasons.map((r, i) => <li key={i}>{r}</li>)}
+            </ul>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 10 }}>
+              Risk tier: {offer.risk_tier} (score {offer.risk_score})
+            </p>
+          </>
+        )}
+        {offer && offer.eligible && offer.risk_tier === 'High' && (
+          <>
+            <p>This store is approved, but landed in the <b>High</b> risk tier (score {offer.risk_score}/10).</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Consider a smaller advance amount or a shorter term before finalizing this offer.
+            </p>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -317,3 +317,84 @@ table.data-table {
 .banner-red { border-color: var(--red); background: color-mix(in srgb, var(--red) 8%, transparent); color: var(--red); }
 .banner-blue { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, transparent); color: var(--blue); }
 .banner-orange { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 8%, transparent); color: var(--orange); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-void) 65%, transparent);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  animation: modal-fade-in 0.15s ease;
+}
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: linear-gradient(160deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+  border: 1px solid var(--modal-color, var(--red));
+  border-top: 3px solid var(--modal-color, var(--red));
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px var(--shadow-outer-strong), 0 0 24px color-mix(in srgb, var(--modal-color, var(--red)) 25%, transparent);
+  animation: modal-scale-in 0.18s ease;
+}
+@keyframes modal-scale-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-red { --modal-color: var(--red); }
+.modal-orange { --modal-color: var(--orange); }
+.modal-green { --modal-color: var(--green); }
+.modal-blue { --modal-color: var(--blue); }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--modal-color, var(--red));
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+.modal-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated-2);
+}
+.modal-body {
+  padding: 18px;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.modal-footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

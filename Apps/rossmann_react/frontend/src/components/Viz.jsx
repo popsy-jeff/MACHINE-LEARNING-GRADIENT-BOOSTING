@@ -29,7 +29,7 @@ const RISK_ICON = { Low: CheckCircle2, Medium: AlertTriangle, High: AlertCircle 
 
 export function RiskIcon({ tier, size = 14 }) {
   const Icon = RISK_ICON[tier] || AlertTriangle;
-  const color = { Low: 'var(--green)', Medium: 'var(--yellow)', High: 'var(--red)' }[tier] || 'var(--yellow)';
+  const color = { Low: 'var(--green)', Medium: 'var(--orange)', High: 'var(--red)' }[tier] || 'var(--orange)';
   return <Icon size={size} color={color} style={{ verticalAlign: 'middle', marginRight: 5 }} />;
 }
 
@@ -77,7 +77,7 @@ export function GlowPill({ label, signal = 'green', dot = true }) {
 }
 
 export function riskSignal(tier) {
-  return { Low: 'green', Medium: 'yellow', High: 'red' }[tier] || 'yellow';
+  return { Low: 'green', Medium: 'orange', High: 'red' }[tier] || 'orange';
 }
 
 export function GaugeChart({ value, min = 0, max = 1, title, suffix = '', goodIsLow = true }) {
@@ -105,7 +105,7 @@ export function GaugeChart({ value, min = 0, max = 1, title, suffix = '', goodIs
   );
 }
 
-const TIER_COLORS = { Low: SIGNAL.green, Medium: SIGNAL.yellow, High: SIGNAL.red };
+const TIER_COLORS = { Low: SIGNAL.green, Medium: SIGNAL.orange, High: SIGNAL.red };
 
 export function DonutChart({ data, title }) {
   // data: [{ name: 'Low', value: 5 }, ...]

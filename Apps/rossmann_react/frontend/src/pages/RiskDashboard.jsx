@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { KpiCard, DonutChart, GlowPill, PageTitle, PAGE_ICONS, Banner, RiskIcon, EligibilityIcon } from '../components/Viz';
+import Modal from '../components/Modal';
 
 export default function RiskDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     api.auditLog().then(setData).catch((e) => setError(e.message));
@@ -24,6 +26,7 @@ export default function RiskDashboard() {
 
   const flagged = data.rows.filter((r) => r.risk_tier === 'High' || r.eligible === false);
   const tierData = Object.entries(data.summary.tier_counts).map(([name, value]) => ({ name, value }));
+  const modalType = selected ? (!selected.eligible ? 'red' : selected.risk_tier === 'High' ? 'orange' : 'green') : 'red';
 
   return (
     <div className="main-content">
@@ -44,26 +47,56 @@ export default function RiskDashboard() {
       {flagged.length === 0 ? (
         <GlowPill label="No applications currently flagged" signal="green" />
       ) : (
-        <DecisionTable rows={flagged} />
+        <DecisionTable rows={flagged} onSelect={setSelected} />
       )}
 
       <hr className="divider" />
       <h3>Full Decision Log</h3>
-      <DecisionTable rows={data.rows} />
+      <DecisionTable rows={data.rows} onSelect={setSelected} />
 
       <a className="btn-3d" style={{ display: 'inline-block', marginTop: 16 }} href={api.auditLogCsvUrl()} download>
         Download full audit log as CSV
       </a>
+
+      <Modal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        type={modalType}
+        title={selected ? `Store #${selected.store_id} — ${selected.eligible ? 'Approved' : 'Declined'}` : ''}
+      >
+        {selected && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div><RiskIcon tier={selected.risk_tier} /> Risk tier: <b>{selected.risk_tier}</b></div>
+            <div><EligibilityIcon eligible={selected.eligible} /> {selected.eligible ? 'Approved' : 'Declined'}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Decided: {selected.timestamp}</div>
+            <hr className="divider" style={{ margin: '4px 0' }} />
+            <div>Avg monthly revenue: <b>${Number(selected.avg_monthly_sales ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</b></div>
+            <div>Max advance: <b>${Number(selected.max_advance).toLocaleString(undefined, { maximumFractionDigits: 0 })}</b></div>
+            {selected.factor_rate && <div>Factor rate: <b>{Number(selected.factor_rate).toFixed(2)}</b></div>}
+            {selected.term_months && <div>Term: <b>{selected.term_months} mo</b></div>}
+            <div>Daily holdback: <b>{(Number(selected.daily_holdback_pct) * 100).toFixed(1)}%</b></div>
+            {selected.decline_reasons?.length > 0 && (
+              <>
+                <hr className="divider" style={{ margin: '4px 0' }} />
+                <div style={{ color: 'var(--red)' }}>Decline reasons:</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {selected.decline_reasons.map((r, i) => <li key={i}>{r}</li>)}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
 
-function DecisionTable({ rows }) {
+function DecisionTable({ rows, onSelect }) {
   const cols = ['timestamp', 'store_id', 'risk_tier', 'eligible', 'avg_monthly_sales', 'max_advance', 'factor_rate', 'term_months', 'daily_holdback_pct'];
   return (
     <div className="data-table-wrap">
       <table className="data-table">
-        <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+        <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}<th>details</th></tr></thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i}>
@@ -76,6 +109,23 @@ function DecisionTable({ rows }) {
               <td>{r.factor_rate ? Number(r.factor_rate).toFixed(2) : '—'}</td>
               <td>{r.term_months ? `${r.term_months} mo` : '—'}</td>
               <td>{(Number(r.daily_holdback_pct) * 100).toFixed(1)}%</td>
+              <td>
+                <button
+                  type="button"
+                  onClick={() => onSelect(r)}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${r.eligible ? 'var(--border)' : 'var(--red)'}`,
+                    color: r.eligible ? 'var(--text-muted)' : 'var(--red)',
+                    borderRadius: 6,
+                    padding: '4px 10px',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  View
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
