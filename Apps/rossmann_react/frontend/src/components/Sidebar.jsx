@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import {
-  Search, Home, Sparkles, ListChecks, BarChart3, Wallet, ShieldCheck, Moon,
+  Search, Home, Sparkles, ListChecks, BarChart3, Wallet, ShieldCheck,
 } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
@@ -44,14 +45,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="sidebar-mode-row">
-          <span className="sidebar-mode-label">
-            <Moon size={16} />
-            Dark mode
-          </span>
-          <span className="glow-dot" style={{ '--pill-color': 'var(--green)' }} />
-        </div>
-        <div className="sidebar-mode-caption">Always on — no light theme</div>
+        <ThemeToggle />
       </div>
     </aside>
   );
