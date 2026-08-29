@@ -29,13 +29,13 @@ const RISK_ICON = { Low: CheckCircle2, Medium: AlertTriangle, High: AlertCircle 
 
 export function RiskIcon({ tier, size = 14 }) {
   const Icon = RISK_ICON[tier] || AlertTriangle;
-  const color = { Low: '#39E67A', Medium: '#F4C542', High: '#FF5C5C' }[tier] || '#F4C542';
+  const color = { Low: 'var(--green)', Medium: 'var(--yellow)', High: 'var(--red)' }[tier] || 'var(--yellow)';
   return <Icon size={size} color={color} style={{ verticalAlign: 'middle', marginRight: 5 }} />;
 }
 
 export function EligibilityIcon({ eligible, size = 14 }) {
   const Icon = eligible ? CheckCircle2 : XCircle;
-  const color = eligible ? '#39E67A' : '#FF5C5C';
+  const color = eligible ? 'var(--green)' : 'var(--red)';
   return <Icon size={size} color={color} style={{ verticalAlign: 'middle', marginRight: 5 }} />;
 }
 
@@ -49,7 +49,13 @@ export function Banner({ type = 'yellow', children }) {
   );
 }
 
-const SIGNAL = { green: '#39E67A', yellow: '#F4C542', red: '#FF5C5C' };
+const SIGNAL = {
+  green: 'var(--green)',
+  yellow: 'var(--yellow)',
+  red: 'var(--red)',
+  blue: 'var(--blue)',
+  orange: 'var(--orange)',
+};
 
 export function KpiCard({ label, value, sub, signal = 'green' }) {
   return (
