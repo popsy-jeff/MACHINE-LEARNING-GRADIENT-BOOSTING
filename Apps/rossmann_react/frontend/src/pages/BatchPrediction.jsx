@@ -74,9 +74,9 @@ export default function BatchPrediction() {
         <>
           <hr className="divider" />
           <div className="card-grid">
-            <KpiCard label="Total Predicted Revenue" value={`$${result.total_predicted_revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
-            <KpiCard label="Average per Row" value={`$${result.average_predicted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
-            <KpiCard label="Rows Predicted" value={result.row_count.toLocaleString()} signal="yellow" />
+            <KpiCard label="Total Predicted Revenue" value={`$${result.total_predicted_revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="blue" />
+            <KpiCard label="Average per Row" value={`$${result.average_predicted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="orange" />
+            <KpiCard label="Rows Predicted" value={result.row_count.toLocaleString()} signal="orange" />
           </div>
 
           {trendData.length > 1 && (

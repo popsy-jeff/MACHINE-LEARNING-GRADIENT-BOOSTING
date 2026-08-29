@@ -26,8 +26,8 @@ export default function ModelPerformance() {
         <GaugeChart value={displayedRmspe} min={0} max={0.5} title="Validation RMSPE" goodIsLow />
         <div>
           <div className="card-grid" style={{ gridTemplateColumns: '1fr' }}>
-            <KpiCard label="Model Version" value={data.model_version} signal="green" />
-            <KpiCard label="Trials Searched" value={String(data.metrics?.n_trials ?? data.reference_runs.length)} signal="yellow" />
+            <KpiCard label="Model Version" value={data.model_version} signal="blue" />
+            <KpiCard label="Trials Searched" value={String(data.metrics?.n_trials ?? data.reference_runs.length)} signal="orange" />
           </div>
         </div>
       </div>

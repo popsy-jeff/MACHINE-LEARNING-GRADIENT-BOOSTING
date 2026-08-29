@@ -134,7 +134,7 @@ export default function SinglePrediction() {
               label="Predicted Sales"
               value={`$${result.predicted_sales.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
               sub={`Store #${form.store_id} · ${form.forecast_date}`}
-              signal="green"
+              signal="blue"
             />
             <div className="card">
               <div className="kpi-label" style={{ marginBottom: 8 }}>Store status</div>

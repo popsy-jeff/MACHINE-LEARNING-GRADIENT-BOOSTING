@@ -31,7 +31,7 @@ export default function RiskDashboard() {
 
       <div className="form-grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          <KpiCard label="Total Applications" value={String(data.summary.total)} signal="green" />
+          <KpiCard label="Total Applications" value={String(data.summary.total)} signal="blue" />
           <KpiCard label="Approved" value={String(data.summary.approved)} signal="green" />
           <KpiCard label="Declined" value={String(data.summary.declined)} signal="red" />
           <KpiCard label="High Risk" value={String(data.summary.high_risk)} signal={data.summary.high_risk ? 'red' : 'green'} />

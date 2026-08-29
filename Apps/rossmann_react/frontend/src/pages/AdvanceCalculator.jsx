@@ -136,8 +136,8 @@ export default function AdvanceCalculator() {
 
               <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 14, marginBottom: 6 }}>Forecast summary</p>
               <div className="card-grid">
-                <KpiCard label="90-Day Projected Sales" value={`$${offer.projected_90d_sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
-                <KpiCard label="Avg Monthly Revenue" value={`$${offer.avg_monthly_sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
+                <KpiCard label="90-Day Projected Sales" value={`$${offer.projected_90d_sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="blue" />
+                <KpiCard label="Avg Monthly Revenue" value={`$${offer.avg_monthly_sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="blue" />
                 <KpiCard label="Safe Estimate (post-haircut)" value={`$${offer.safe_estimate.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="yellow" />
                 <KpiCard label="Revenue Volatility" value={`${(offer.volatility * 100).toFixed(0)}%`} sub="coefficient of variation" signal={offer.volatility > 0.35 ? 'red' : offer.volatility > 0.2 ? 'yellow' : 'green'} />
               </div>
@@ -145,9 +145,9 @@ export default function AdvanceCalculator() {
               <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 20, marginBottom: 6 }}>Offer terms (MCA pricing)</p>
               <div className="card-grid">
                 <KpiCard label="Max Advance" value={`$${offer.max_advance.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
-                <KpiCard label="Factor Rate" value={offer.factor_rate.toFixed(2)} sub={`total payback $${offer.total_payback.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="yellow" />
-                <KpiCard label="Term" value={`${offer.term_months} mo`} signal="yellow" />
-                <KpiCard label="Daily Holdback %" value={`${(offer.daily_holdback_pct * 100).toFixed(1)}%`} sub="of daily card/bank sales" signal="yellow" />
+                <KpiCard label="Factor Rate" value={offer.factor_rate.toFixed(2)} sub={`total payback $${offer.total_payback.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="orange" />
+                <KpiCard label="Term" value={`${offer.term_months} mo`} signal="blue" />
+                <KpiCard label="Daily Holdback %" value={`${(offer.daily_holdback_pct * 100).toFixed(1)}%`} sub="of daily card/bank sales" signal="orange" />
               </div>
 
               <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 20 }}>

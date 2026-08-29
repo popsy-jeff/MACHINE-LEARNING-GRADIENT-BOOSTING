@@ -29,8 +29,8 @@ export default function Home() {
           sub={health ? `version ${health.model_version}` : ''}
           signal={health?.is_demo ? 'yellow' : 'green'}
         />
-        <KpiCard label="Pipeline Stage" value="Phase 3" sub="Business logic layer active" signal="green" />
-        <KpiCard label="Pages Available" value="5" sub="Prediction → Financing → Ops" signal="green" />
+        <KpiCard label="Pipeline Stage" value="Phase 3" sub="Business logic layer active" signal="blue" />
+        <KpiCard label="Pages Available" value="5" sub="Prediction → Financing → Ops" signal="orange" />
       </div>
 
       <hr className="divider" />
