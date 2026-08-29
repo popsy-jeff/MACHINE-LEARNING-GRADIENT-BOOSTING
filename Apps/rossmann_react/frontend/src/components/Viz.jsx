@@ -2,6 +2,52 @@ import {
   RadialBarChart, RadialBar, PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, Area, AreaChart, CartesianGrid,
 } from 'recharts';
+import {
+  Home, Sparkles, ListChecks, BarChart3, Wallet, ShieldCheck,
+  CheckCircle2, XCircle, AlertTriangle, AlertCircle, TriangleAlert,
+} from 'lucide-react';
+
+export const PAGE_ICONS = {
+  home: Home,
+  predict: Sparkles,
+  batch: ListChecks,
+  performance: BarChart3,
+  advance: Wallet,
+  risk: ShieldCheck,
+};
+
+export function PageTitle({ icon: Icon, children }) {
+  return (
+    <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <Icon size={26} strokeWidth={2.2} color="var(--green)" />
+      {children}
+    </h1>
+  );
+}
+
+const RISK_ICON = { Low: CheckCircle2, Medium: AlertTriangle, High: AlertCircle };
+
+export function RiskIcon({ tier, size = 14 }) {
+  const Icon = RISK_ICON[tier] || AlertTriangle;
+  const color = { Low: '#39E67A', Medium: '#F4C542', High: '#FF5C5C' }[tier] || '#F4C542';
+  return <Icon size={size} color={color} style={{ verticalAlign: 'middle', marginRight: 5 }} />;
+}
+
+export function EligibilityIcon({ eligible, size = 14 }) {
+  const Icon = eligible ? CheckCircle2 : XCircle;
+  const color = eligible ? '#39E67A' : '#FF5C5C';
+  return <Icon size={size} color={color} style={{ verticalAlign: 'middle', marginRight: 5 }} />;
+}
+
+export function Banner({ type = 'yellow', children }) {
+  const Icon = type === 'green' ? CheckCircle2 : type === 'red' ? XCircle : TriangleAlert;
+  return (
+    <div className={`banner banner-${type}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <Icon size={18} style={{ flexShrink: 0, marginTop: 1 }} />
+      <div>{children}</div>
+    </div>
+  );
+}
 
 const SIGNAL = { green: '#39E67A', yellow: '#F4C542', red: '#FF5C5C' };
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { KpiCard, GlowPill, riskSignal, GaugeChart, ForecastLineChart } from '../components/Viz';
+import { KpiCard, GlowPill, riskSignal, GaugeChart, ForecastLineChart, PageTitle, PAGE_ICONS, Banner } from '../components/Viz';
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -50,7 +50,7 @@ export default function AdvanceCalculator() {
   return (
     <div className="main-content">
       <div className="page-header">
-        <h1>💰 Revenue-Based Financing — Advance Calculator</h1>
+        <PageTitle icon={PAGE_ICONS.advance}>Revenue-Based Financing — Advance Calculator</PageTitle>
       </div>
 
       <form onSubmit={submit} className="card">
@@ -115,7 +115,7 @@ export default function AdvanceCalculator() {
         </button>
       </form>
 
-      {error && <div className="banner banner-red">⚠️ {error}</div>}
+      {error && <Banner type="red">{error}</Banner>}
 
       {offer && (
         <>

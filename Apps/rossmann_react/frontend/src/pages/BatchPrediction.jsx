@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { KpiCard, ForecastLineChart } from '../components/Viz';
+import { KpiCard, ForecastLineChart, PageTitle, PAGE_ICONS, Banner } from '../components/Viz';
 
 export default function BatchPrediction() {
   const [file, setFile] = useState(null);
@@ -51,7 +51,7 @@ export default function BatchPrediction() {
   return (
     <div className="main-content">
       <div className="page-header">
-        <h1>📋 Batch Sales Prediction</h1>
+        <PageTitle icon={PAGE_ICONS.batch}>Batch Sales Prediction</PageTitle>
         <p className="page-subtitle">
           Upload a CSV with columns: Store, Date, Promo, Promo2, SchoolHoliday, StateHoliday,
           StoreType, Assortment, CompetitionDistance (and optionally Open).
@@ -68,7 +68,7 @@ export default function BatchPrediction() {
         </button>
       </form>
 
-      {error && <div className="banner banner-red">⚠️ {error}</div>}
+      {error && <Banner type="red">{error}</Banner>}
 
       {result && (
         <>

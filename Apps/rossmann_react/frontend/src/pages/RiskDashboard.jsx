@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import { KpiCard, DonutChart, GlowPill } from '../components/Viz';
+import { KpiCard, DonutChart, GlowPill, PageTitle, PAGE_ICONS, Banner, RiskIcon, EligibilityIcon } from '../components/Viz';
 
 export default function RiskDashboard() {
   const [data, setData] = useState(null);
@@ -10,13 +10,13 @@ export default function RiskDashboard() {
     api.auditLog().then(setData).catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <div className="main-content"><div className="banner banner-red">⚠️ {error}</div></div>;
+  if (error) return <div className="main-content"><Banner type="red">{error}</Banner></div>;
   if (!data) return <div className="main-content">Loading…</div>;
 
   if (!data.rows.length) {
     return (
       <div className="main-content">
-        <div className="page-header"><h1>🛡️ Ops / Risk Dashboard</h1></div>
+        <div className="page-header"><PageTitle icon={PAGE_ICONS.risk}>Ops / Risk Dashboard</PageTitle></div>
         <p style={{ color: 'var(--text-muted)' }}>No decisions logged yet — run the Advance Calculator to generate some.</p>
       </div>
     );
@@ -27,7 +27,7 @@ export default function RiskDashboard() {
 
   return (
     <div className="main-content">
-      <div className="page-header"><h1>🛡️ Ops / Risk Dashboard</h1></div>
+      <div className="page-header"><PageTitle icon={PAGE_ICONS.risk}>Ops / Risk Dashboard</PageTitle></div>
 
       <div className="form-grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
@@ -69,8 +69,8 @@ function DecisionTable({ rows }) {
             <tr key={i}>
               <td>{r.timestamp}</td>
               <td>{r.store_id}</td>
-              <td>{r.risk_tier === 'Low' ? '🟢' : r.risk_tier === 'Medium' ? '🟡' : '🔴'} {r.risk_tier}</td>
-              <td>{r.eligible ? '🟢 Approved' : '🔴 Declined'}</td>
+              <td><RiskIcon tier={r.risk_tier} />{r.risk_tier}</td>
+              <td><EligibilityIcon eligible={r.eligible} />{r.eligible ? 'Approved' : 'Declined'}</td>
               <td>${Number(r.max_advance).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
               <td>{(Number(r.daily_holdback_pct) * 100).toFixed(1)}%</td>
             </tr>

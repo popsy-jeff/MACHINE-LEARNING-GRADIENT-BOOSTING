@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { KpiCard, GlowPill } from '../components/Viz';
+import { KpiCard, GlowPill, PageTitle, PAGE_ICONS, Banner } from '../components/Viz';
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -48,7 +48,7 @@ export default function SinglePrediction() {
   return (
     <div className="main-content">
       <div className="page-header">
-        <h1>🔮 Single Store Sales Prediction</h1>
+        <PageTitle icon={PAGE_ICONS.predict}>Single Store Sales Prediction</PageTitle>
       </div>
 
       <form onSubmit={submit} className="card">
@@ -124,7 +124,7 @@ export default function SinglePrediction() {
         </button>
       </form>
 
-      {error && <div className="banner banner-red">⚠️ {error}</div>}
+      {error && <Banner type="red">{error}</Banner>}
 
       {result && (
         <>
@@ -146,7 +146,7 @@ export default function SinglePrediction() {
             </div>
           </div>
 
-          {result.is_demo && <div className="banner banner-yellow">⚠️ This prediction is from the demo model, not your real trained model.</div>}
+          {result.is_demo && <Banner type="yellow">This prediction is from the demo model, not your real trained model.</Banner>}
 
           <details style={{ marginTop: 16 }}>
             <summary style={{ cursor: 'pointer', color: 'var(--text-muted)' }}>See the exact features sent to the model</summary>

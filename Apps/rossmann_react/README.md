@@ -9,21 +9,41 @@ restyle by hand (plain CSS files, no framework-controlled components).
 ```
 backend/     FastAPI app — model, feature pipeline, business logic, API
 frontend/    React (Vite) app — pages, sidebar, charts
+.vscode/     One-click run configuration (see below)
 ```
 
-## 1. Run the backend
+## One-time setup (dependencies are NOT pre-installed)
 
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+
+cd ../frontend
+npm install
 ```
 
-Runs at `http://localhost:8000`. It starts on a small **demo model** trained
-on synthetic data until you drop in your real one (see below), so the app is
-fully click-through-able immediately.
+## Running it — three ways
 
-### Connect your real trained model
+**Open the `rossmann_react` folder itself as the VS Code workspace root**
+(not a parent folder) — the `.vscode/` configs below assume that.
+
+1. **One click, Run & Debug panel (recommended):** open the Run and Debug
+   panel (`Ctrl+Shift+D`), pick **"🚀 Run Full App (Backend + Frontend)"**
+   from the dropdown at the top, press the green ▷ button (or `F5`). This
+   starts both servers in one action. Requires the Python extension
+   (VS Code will prompt to install it via `.vscode/extensions.json`).
+
+2. **One click, tasks:** `Ctrl+Shift+B` runs the default build task, which
+   starts both servers in separate terminal panels. No extra extension needed.
+
+3. **Outside VS Code:** double-click `start.bat` (Windows) — opens two
+   terminal windows, one per server.
+
+Either way: backend on `http://localhost:8000`, frontend on
+`http://localhost:5173`.
+
+
+## 2. Connect your real trained model
 
 From your notebook, right after training:
 
@@ -43,16 +63,10 @@ json.dump({
 Copy those three files into `backend/models/`, restart the backend — the
 Home page will show "Loaded trained model" instead of the demo-model warning.
 
-## 2. Run the frontend
+## 3. Frontend API target
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Runs at `http://localhost:5173` by default and expects the backend at
-`http://localhost:8000`. To point it elsewhere, create `frontend/.env`:
+By default the frontend expects the backend at `http://localhost:8000`. To
+point it elsewhere, create `frontend/.env`:
 
 ```
 VITE_API_URL=http://your-backend-host:8000

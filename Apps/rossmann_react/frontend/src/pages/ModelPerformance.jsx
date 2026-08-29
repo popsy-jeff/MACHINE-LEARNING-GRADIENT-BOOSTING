@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import { KpiCard, GaugeChart, ImportanceBarChart } from '../components/Viz';
+import { KpiCard, GaugeChart, ImportanceBarChart, PageTitle, PAGE_ICONS, Banner } from '../components/Viz';
 
 export default function ModelPerformance() {
   const [data, setData] = useState(null);
@@ -10,7 +10,7 @@ export default function ModelPerformance() {
     api.modelMetrics().then(setData).catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <div className="main-content"><div className="banner banner-red">⚠️ {error}</div></div>;
+  if (error) return <div className="main-content"><Banner type="red">{error}</Banner></div>;
   if (!data) return <div className="main-content">Loading…</div>;
 
   const displayedRmspe = data.metrics?.rmspe ?? data.reference_runs[data.reference_runs.length - 1].rmspe;
@@ -18,7 +18,7 @@ export default function ModelPerformance() {
   return (
     <div className="main-content">
       <div className="page-header">
-        <h1>📊 Model Performance</h1>
+        <PageTitle icon={PAGE_ICONS.performance}>Model Performance</PageTitle>
       </div>
 
       <h3>Validation Metrics</h3>
