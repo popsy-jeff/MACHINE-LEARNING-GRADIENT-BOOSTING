@@ -59,7 +59,7 @@ export default function RiskDashboard() {
 }
 
 function DecisionTable({ rows }) {
-  const cols = ['timestamp', 'store_id', 'risk_tier', 'eligible', 'max_advance', 'daily_holdback_pct'];
+  const cols = ['timestamp', 'store_id', 'risk_tier', 'eligible', 'avg_monthly_sales', 'max_advance', 'factor_rate', 'term_months', 'daily_holdback_pct'];
   return (
     <div className="data-table-wrap">
       <table className="data-table">
@@ -71,7 +71,10 @@ function DecisionTable({ rows }) {
               <td>{r.store_id}</td>
               <td><RiskIcon tier={r.risk_tier} />{r.risk_tier}</td>
               <td><EligibilityIcon eligible={r.eligible} />{r.eligible ? 'Approved' : 'Declined'}</td>
+              <td>${Number(r.avg_monthly_sales ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
               <td>${Number(r.max_advance).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+              <td>{r.factor_rate ? Number(r.factor_rate).toFixed(2) : '—'}</td>
+              <td>{r.term_months ? `${r.term_months} mo` : '—'}</td>
               <td>{(Number(r.daily_holdback_pct) * 100).toFixed(1)}%</td>
             </tr>
           ))}

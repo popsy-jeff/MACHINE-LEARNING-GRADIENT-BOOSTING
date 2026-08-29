@@ -4,8 +4,6 @@ import { KpiCard, GlowPill, riskSignal, GaugeChart, ForecastLineChart, PageTitle
 
 const today = new Date().toISOString().slice(0, 10);
 
-const RISK_SCORE = { Low: 20, Medium: 55, High: 90 };
-
 export default function AdvanceCalculator() {
   const [form, setForm] = useState({
     store_id: 1,
@@ -128,19 +126,33 @@ export default function AdvanceCalculator() {
               <ul style={{ color: 'var(--text-primary)', marginTop: 12 }}>
                 {offer.decline_reasons.map((r, i) => <li key={i}>{r}</li>)}
               </ul>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Risk tier for reference: {offer.risk_tier} (score {offer.risk_score})
+              </p>
             </>
           ) : (
             <>
               <GlowPill label="Eligible" signal="green" />
-              <div className="card-grid" style={{ marginTop: 16 }}>
+
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 14, marginBottom: 6 }}>Forecast summary</p>
+              <div className="card-grid">
                 <KpiCard label="90-Day Projected Sales" value={`$${offer.projected_90d_sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
+                <KpiCard label="Avg Monthly Revenue" value={`$${offer.avg_monthly_sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
                 <KpiCard label="Safe Estimate (post-haircut)" value={`$${offer.safe_estimate.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="yellow" />
-                <KpiCard label="Risk Tier" value={offer.risk_tier} signal={riskSignal(offer.risk_tier)} />
+                <KpiCard label="Revenue Volatility" value={`${(offer.volatility * 100).toFixed(0)}%`} sub="coefficient of variation" signal={offer.volatility > 0.35 ? 'red' : offer.volatility > 0.2 ? 'yellow' : 'green'} />
               </div>
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginTop: 16 }}>
-                <KpiCard label="Max Advance Offer" value={`$${offer.max_advance.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
-                <KpiCard label="Daily Holdback %" value={`${(offer.daily_holdback_pct * 100).toFixed(1)}%`} signal="yellow" />
-                <GaugeChart value={RISK_SCORE[offer.risk_tier] ?? 55} min={0} max={100} title="Risk Score" goodIsLow />
+
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 20, marginBottom: 6 }}>Offer terms (MCA pricing)</p>
+              <div className="card-grid">
+                <KpiCard label="Max Advance" value={`$${offer.max_advance.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="green" />
+                <KpiCard label="Factor Rate" value={offer.factor_rate.toFixed(2)} sub={`total payback $${offer.total_payback.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} signal="yellow" />
+                <KpiCard label="Term" value={`${offer.term_months} mo`} signal="yellow" />
+                <KpiCard label="Daily Holdback %" value={`${(offer.daily_holdback_pct * 100).toFixed(1)}%`} sub="of daily card/bank sales" signal="yellow" />
+              </div>
+
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 20 }}>
+                <KpiCard label="Risk Tier" value={offer.risk_tier} sub={`risk score: ${offer.risk_score}`} signal={riskSignal(offer.risk_tier)} />
+                <GaugeChart value={offer.risk_score} min={0} max={10} title="Risk Score (0-10)" goodIsLow />
               </div>
             </>
           )}

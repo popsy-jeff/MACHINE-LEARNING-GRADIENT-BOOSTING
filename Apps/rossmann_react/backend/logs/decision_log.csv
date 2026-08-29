@@ -1,0 +1,2 @@
+timestamp,store_id,model_version,projected_90d_sales,avg_monthly_sales,safe_estimate,volatility,max_advance,factor_rate,total_payback,term_months,daily_holdback_pct,risk_tier,risk_score,eligible,decline_reasons
+2026-08-29T14:35:09.733315,32,v1.0-demo,37357719969.55,12452573323.18,27736645838.8,0.4109,13868322919.4,1.15,15948571357.31,9,0.265,Low,2,True,

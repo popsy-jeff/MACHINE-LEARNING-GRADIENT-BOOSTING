@@ -66,18 +66,40 @@ def _safe_sales(value: float) -> float:
     return float(value)
 
 
-def predict_sales(model, feature_row: pd.DataFrame, is_open: int = 1) -> float:
+# Bound applied to the model's raw (log-space) output before exponentiating.
+# np.expm1(20) is already ~485 million — far beyond any real single-day sales
+# figure — so clipping here can only ever affect a genuinely broken
+# prediction, never a legitimate one. This turns "silently returns $0" into
+# "returns an obviously-too-large number", which is far easier to notice and
+# debug than a fake-looking zero.
+RAW_LOG_PRED_BOUND = 20.0
+
+
+def predict_sales(model, feature_row: pd.DataFrame, is_open: int = 1) -> dict:
+    """Returns both the final dollar prediction and the raw log-space value,
+    so the API can surface the raw number for debugging when something looks
+    wrong (e.g. a scale mismatch between how the model was trained and what
+    the backend is feeding it)."""
     if is_open == 0:
-        return 0.0
-    raw_pred = model.predict(feature_row)[0]
-    sales = np.expm1(raw_pred)
+        return {"predicted_sales": 0.0, "raw_log_prediction": None, "clipped": False}
+
+    raw_pred = float(model.predict(feature_row)[0])
+    clipped = abs(raw_pred) > RAW_LOG_PRED_BOUND
+    bounded_pred = float(np.clip(raw_pred, -RAW_LOG_PRED_BOUND, RAW_LOG_PRED_BOUND))
+
+    sales = np.expm1(bounded_pred)
     sales = np.clip(sales, 0, None)
-    return _safe_sales(sales)
+    return {
+        "predicted_sales": _safe_sales(sales),
+        "raw_log_prediction": raw_pred,
+        "clipped": clipped,
+    }
 
 
 def predict_sales_batch(model, feature_df: pd.DataFrame, open_flags=None) -> np.ndarray:
     raw_preds = model.predict(feature_df)
-    sales = np.expm1(raw_preds)
+    bounded = np.clip(raw_preds, -RAW_LOG_PRED_BOUND, RAW_LOG_PRED_BOUND)
+    sales = np.expm1(bounded)
     sales = np.clip(sales, 0, None)
     sales = np.where(np.isfinite(sales), sales, 0.0)
     if open_flags is not None:

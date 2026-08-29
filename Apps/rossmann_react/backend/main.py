@@ -94,7 +94,9 @@ def predict(req: SinglePredictionRequest):
     prediction = predict_sales(model, features, is_open=req.is_open)
 
     return {
-        "predicted_sales": prediction,
+        "predicted_sales": prediction["predicted_sales"],
+        "raw_log_prediction": prediction["raw_log_prediction"],
+        "prediction_was_clipped": prediction["clipped"],
         "is_demo": is_demo,
         "features": features.iloc[0].to_dict(),
     }
@@ -198,8 +200,14 @@ def advance_offer(req: AdvanceRequest):
         # Sundays treated as closed by default, same as the Streamlit version
         is_open = 0 if forecast_date.isoweekday() == 7 else 1
         pred = predict_sales(model, features, is_open=is_open)
-        daily_predictions.append(pred)
+        daily_predictions.append(pred["predicted_sales"])
         daily_dates.append(forecast_date.isoformat())
+
+    metrics_path = "models/validation_metrics.json"
+    model_rmspe = None
+    if os.path.exists(metrics_path):
+        with open(metrics_path) as f:
+            model_rmspe = json.load(f).get("rmspe")
 
     offer = build_advance_offer(
         daily_predictions=daily_predictions,
@@ -208,6 +216,7 @@ def advance_offer(req: AdvanceRequest):
         is_closing_flagged=req.is_closing_flagged,
         competition_distance=req.competition_distance,
         store_type=req.store_type,
+        model_rmspe=model_rmspe,
     )
 
     log_decision(req.store_id, MODEL_VERSION, offer)
@@ -215,10 +224,17 @@ def advance_offer(req: AdvanceRequest):
     return {
         "is_demo": is_demo,
         "projected_90d_sales": offer.projected_90d_sales,
+        "avg_daily_sales": offer.avg_daily_sales,
+        "avg_monthly_sales": offer.avg_monthly_sales,
         "safe_estimate": offer.safe_estimate,
+        "volatility": offer.volatility,
         "max_advance": offer.max_advance,
+        "factor_rate": offer.factor_rate,
+        "total_payback": offer.total_payback,
+        "term_months": offer.term_months,
         "daily_holdback_pct": offer.daily_holdback_pct,
         "risk_tier": offer.risk_tier,
+        "risk_score": offer.risk_score,
         "eligible": offer.eligibility.eligible,
         "decline_reasons": offer.eligibility.reasons,
         "daily_forecast": [{"date": d, "predicted_sales": p} for d, p in zip(daily_dates, daily_predictions)],
